@@ -14,17 +14,8 @@ const App = () => {
       <Leva collapsed />
       <MenuButton />
       <Sns />
-      <Canvas
-        camera={{
-          position: [0, 0, 5],
-          fov: 45,
-        }}
-      >
-        <Perf position="top-left" />
-        <Suspense fallback={<Loader />}>
-          <Experience />
-        </Suspense>
-      </Canvas>
+
+      <Experience />
     </>
   )
 }
