@@ -41,7 +41,7 @@ void main() {
 
   transformedPosition = (transformedPosition - center) * mix(1.0, scale * 1.25, finalStep) + center;
 
-  transformedPosition += normal * finalStep * 0.125;
+  transformedPosition += normal * finalStep * 0.2;
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(transformedPosition, 1.0);
 }

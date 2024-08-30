@@ -10,7 +10,7 @@ void main() {
 
   float circle = clamp(length(vUv - 0.5) / 0.5, 0.0, 1.0);
 
-  vec3 gradient = mix(vec3(1.0, 0.75, 1.0), vec3(0.0, 1.0, 1.0), circle);
+  vec3 gradient = mix(vec3(0.5, 0.5, 0.5), vec3(1.0, 1.0, 1.0), circle);
 
   vec3 color = mix(diffuse, vColor, vFinalStep);
 

@@ -14,8 +14,9 @@ const App = () => {
       <Leva collapsed />
       <MenuButton />
       <Sns />
-
-      <Experience />
+      <Suspense fallback={<Loader />}>
+        <Experience />
+      </Suspense>
     </>
   )
 }

@@ -1,16 +1,20 @@
-import { useRef, useEffect, useState, useMemo } from 'react'
+import { useRef, useEffect, useState, useMemo, useCallback } from 'react'
 import { useFrame } from '@react-three/fiber'
 
 import * as THREE from 'three'
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
-import { useSnapshot } from 'valtio'
+import { useSnapshot, subscribe } from 'valtio'
 import { phenomenonState, Impact } from '@/state/phenomenon'
+
+import { useAnimateImpacts } from '@/components/useAnimateImpacts'
 
 import globeVertexShader from '@/shaders/globe-vertex.glsl'
 import globeFragmentShader from '@/shaders/globe-fragment.glsl'
 
 import GSAP from 'gsap'
+
+import { createInitialImpacts } from '@/components/functions/createInitialImpacts'
 
 const generateGlobePoints = (
   imageData: ImageData,
@@ -74,24 +78,12 @@ const generateGlobePoints = (
   return margedGeometry
 }
 
-const createInitialImpactUniform = (): Impact => {
-  return {
-    impactPosition: new THREE.Vector3(),
-    impactMaxRadius: 0,
-    impactRatio: 0,
-  }
-}
-
-const createInitialImpactUniforms = (count: number): Impact[] => {
-  return Array.from({ length: count }, () => createInitialImpactUniform())
-}
-
 const createMaterial = () => {
   const impactCount = 10
 
   const material = new THREE.ShaderMaterial({
     uniforms: {
-      impacts: { value: createInitialImpactUniforms(impactCount) },
+      impacts: { value: createInitialImpacts(impactCount) },
       phenomenonColor: { value: new THREE.Color(0.8, 0.1, 0.1) },
       diffuse: { value: new THREE.Color(20 / 255, 23 / 255, 32 / 255) },
     },
@@ -104,36 +96,24 @@ const createMaterial = () => {
   return material
 }
 
-const generateImpact = (
-  phenomenon: 'earthquake' | 'volcano' | 'hurricane',
-): Impact => {
-  const impact: Impact = {
-    impactPosition: new THREE.Vector3(),
-    impactMaxRadius: 0,
-    impactRatio: 0,
-  }
-
-  impact.impactPosition.setFromSphericalCoords(
-    5,
-    Math.PI * Math.random(),
-    Math.PI * 2 * Math.random(),
-  )
-
-  impact.impactMaxRadius = 5 * THREE.MathUtils.randFloat(0.5, 1)
-
-  return impact
-}
-
 export const Globe = () => {
   const meshRef = useRef<THREE.Mesh>(null)
   const materialRef = useRef<THREE.ShaderMaterial>(null)
+
+  //animate impacts
+  useAnimateImpacts(materialRef)
+
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null)
 
-  const { activePhenomenon } = useSnapshot(phenomenonState)
+  const { activePhenomenon, phenomenonImpacts } = useSnapshot(phenomenonState)
+
+  const material = useMemo(() => {
+    return createMaterial()
+  }, [])
 
   useEffect(() => {
+    // create image geometry
     const img = new Image()
-
     img.onload = () => {
       const canvas = document.createElement('canvas')
 
@@ -148,7 +128,6 @@ export const Globe = () => {
       if (ctx) {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
         ctx.fillStyle = 'white'
-        ctx.fillRect(0, 0, canvas.width, 14)
 
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
         const globeGeometry = generateGlobePoints(imageData, sizes)
@@ -156,83 +135,36 @@ export const Globe = () => {
         setGeometry(globeGeometry)
       }
     }
-
     img.src = 'textures/map.jpg'
   }, [])
 
-  const material = useMemo(() => {
-    return createMaterial()
-  }, [])
-
-  useEffect(() => {
-    const maxImpacts = 10
-    let impacts = createInitialImpactUniforms(maxImpacts)
-
-    const createManagedImpact = () => {
-      const newImpact = generateImpact(activePhenomenon)
-
-      const emptySlotIndex = impacts.findIndex(
-        (impact) => impact.impactRatio === 0,
-      )
-
-      if (emptySlotIndex !== -1) {
-        impacts[emptySlotIndex] = newImpact
-      } else {
-        impacts = [...impacts.slice(1), newImpact]
-      }
-
-      if (materialRef.current) {
-        materialRef.current.uniforms.impacts.value = impacts
-      }
-
-      GSAP.to(newImpact, {
-        impactRatio: 1,
-        duration: THREE.MathUtils.randFloat(1.5, 2.5),
-        ease: 'power2.inOut',
-        onUpdate: () => {
-          if (materialRef.current) {
-            materialRef.current.uniforms.impacts.value = impacts
-          }
-        },
-        onComplete: () => {
-          const index = impacts.indexOf(newImpact)
-          if (index > -1) {
-            impacts[index] = createInitialImpactUniform()
-          }
-          if (materialRef.current) {
-            materialRef.current.uniforms.impacts.value = impacts
-          }
-        },
-      })
-    }
-
-    const interval = setInterval(createManagedImpact, 2000)
-
-    return () => {
-      clearInterval(interval)
-      impacts = []
-    }
-  }, [activePhenomenon])
-
   useFrame((state, delta) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.y += delta * 0.1
-    }
-
     if (materialRef.current) {
+      //color select
       switch (activePhenomenon) {
-        case 'earthquake':
+        case 'earthquakes':
           materialRef.current.uniforms.phenomenonColor.value.setRGB(
-            0.8,
-            0.1,
-            0.1,
+            0.0,
+            1.0,
+            1.0,
           )
           break
-        case 'volcano':
-          materialRef.current.uniforms.phenomenonColor.value.setRGB(1.0, 0.5, 0)
+        case 'volcanoes':
+          materialRef.current.uniforms.phenomenonColor.value.setRGB(
+            1.0,
+            1.0,
+            0.0,
+          )
           break
-        case 'hurricane':
-          materialRef.current.uniforms.phenomenonColor.value.setRGB(0, 0.5, 0.8)
+        case 'floods':
+          materialRef.current.uniforms.phenomenonColor.value.setRGB(0, 0.0, 1.0)
+          break
+        case 'wildfires':
+          materialRef.current.uniforms.phenomenonColor.value.setRGB(
+            1.0,
+            0.0,
+            0.0,
+          )
           break
       }
     }
