@@ -1,63 +1,79 @@
 import { OrbitControls, Loader } from '@react-three/drei'
 import * as THREE from 'three'
 import { useControls } from 'leva'
+import { useQuery } from 'react-query'
 import { useRef, Suspense, useEffect } from 'react'
 import { useFrame, Canvas } from '@react-three/fiber'
 import { Perf } from 'r3f-perf'
 import { ResponsiveCamera } from '@/components/ResponsiveCamera'
 import { Globe } from '@/components/Globe'
 import { GlobeGrid } from '@/components/GlobeGrid'
-import { generateMultipleImpacts } from '@/components/functions/generateMultipleImpacts'
+
 import { phenomenonState, Impact } from '@/state/phenomenon'
 import { useSnapshot } from 'valtio'
 import { useState } from 'react'
 
-import { createImpactsFromEONET } from '@/components/functions/createImpactsFromEONET'
+import { getEONETEventObjects } from '@/functions/getEONETEventObjects'
 
-import {
-  fetchEONETEvent,
-  EONETEvent,
-  EventCategory,
-} from '@/components/functions/fetchEONETEvent'
+import { createImpactsFromEONET } from '@/functions/createImpactsFromEONET'
+import { Switcher } from '@/components/Switcher'
+import { Subtitles } from '@/components/Subtitles'
+
+import { fetchEONETEvent, EONETEvent } from '@/functions/fetchEONETEvent'
+import { EventCategory } from '@/state/phenomenon'
 
 export const Experience = (): JSX.Element => {
-  const [EONETEvents, setEONETEvents] = useState<Record<
-    EventCategory,
-    EONETEvent
-  > | null>(null)
+  // const [EONETEvents, setEONETEvents] = useState<Record<
+  //   EventCategory,
+  //   EONETEvent
+  // > | null>(null)
 
   const { activePhenomenon } = useSnapshot(phenomenonState)
 
-  const fetchAllCategoriesEvent = async () => {
-    const categories: EventCategory[] = [
-      'earthquakes',
-      'volcanoes',
-      'floods',
-      'wildfires',
-    ]
+  const categories: EventCategory[] = [
+    'earthquakes',
+    'volcanoes',
+    'floods',
+    'wildfires',
+  ]
 
+  const fetchAllCategoriesEvent = async () => {
     const results = await Promise.all(
       categories.map(async (category) => {
         const events = await fetchEONETEvent(category)
 
-        return events
+        // return events
+        return { [category]: events }
       }),
     )
 
-    const newEONETEvents = categories.reduce((acc, category, index) => {
-      acc[category] = results[index]
-      return acc
-    }, {} as Record<EventCategory, EONETEvent>)
+    // const newEONETEvents = categories.reduce((acc, category, index) => {
+    //   acc[category] = results[index]
+    //   return acc
+    // }, {} as Record<EventCategory, EONETEvent>)
 
-    setEONETEvents(newEONETEvents)
+    // setEONETEvents(newEONETEvents)
+
+    const newEONETEvents = Object.assign({}, ...results) as Record<
+      EventCategory,
+      EONETEvent
+    >
+
+    return newEONETEvents
   }
 
-  const switchPhenomenon = (
-    targetPhenomenon: 'earthquakes' | 'volcanoes' | 'floods' | 'wildfires',
-  ) => {
+  const { data: EONETEvents } = useQuery(
+    'EONETEvents',
+    fetchAllCategoriesEvent,
+    {
+      suspense: true,
+    },
+  )
+
+  const switchPhenomenon = (targetPhenomenon: EventCategory) => {
     phenomenonState.activePhenomenon = targetPhenomenon
 
-    generateMultipleImpacts(targetPhenomenon, 10)
+    updateImpacts(targetPhenomenon)
   }
 
   const updateImpacts = (category: EventCategory) => {
@@ -72,12 +88,21 @@ export const Experience = (): JSX.Element => {
   }
 
   useEffect(() => {
-    fetchAllCategoriesEvent()
-  }, [])
+    // fetchAllCategoriesEvent()
+    if (EONETEvents) {
+      updateImpacts(activePhenomenon)
+      const eventObjects = getEONETEventObjects(EONETEvents)
+      phenomenonState.titles = eventObjects
+    }
+  }, [EONETEvents])
 
   useEffect(() => {
     if (EONETEvents) {
       updateImpacts(activePhenomenon)
+
+      const eventObjects = getEONETEventObjects(EONETEvents)
+
+      phenomenonState.titles = eventObjects
     }
   }, [EONETEvents, activePhenomenon])
 
@@ -85,19 +110,24 @@ export const Experience = (): JSX.Element => {
     <>
       <Canvas>
         {/* <Perf position="top-left" /> */}
-        <color attach="background" args={[196 / 255, 197 / 255, 199 / 255]} />
+        <color attach="background" args={[204 / 255, 205 / 255, 207 / 255]} />
         <ResponsiveCamera />
         <OrbitControls />
         <Globe />
         <GlobeGrid />
       </Canvas>
-      <div className="changer">
-        <button onClick={() => switchPhenomenon('earthquakes')}>
-          Earthquakes
-        </button>
-        <button onClick={() => switchPhenomenon('volcanoes')}>Volcanoes</button>
-        <button onClick={() => switchPhenomenon('floods')}>Floods</button>
-        <button onClick={() => switchPhenomenon('wildfires')}>Wildfires</button>
+      <div className="contents">
+        <div className="contents__inner">
+          <div className="contents__header">
+            <Switcher
+              switchFunction={switchPhenomenon}
+              categories={categories}
+            />
+          </div>
+          <div className="contents__body">
+            <Subtitles />
+          </div>
+        </div>
       </div>
     </>
   )

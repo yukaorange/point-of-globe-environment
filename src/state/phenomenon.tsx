@@ -1,7 +1,9 @@
 import { proxy } from 'valtio'
 import * as THREE from 'three'
 
-import { createInitialImpacts } from '@/components/functions/createInitialImpacts'
+import { createInitialImpacts } from '@/functions/createInitialImpacts'
+
+export type EventCategory = 'earthquakes' | 'volcanoes' | 'floods' | 'wildfires'
 
 export interface Impact {
   impactPosition: THREE.Vector3
@@ -17,6 +19,9 @@ export interface PhenomenonState {
     floods: Impact[]
     wildfires: Impact[]
   }
+  titles: {
+    [key: string]: any
+  }
 }
 
 const initialImpactsCount = 10
@@ -28,5 +33,11 @@ export const phenomenonState = proxy<PhenomenonState>({
     volcanoes: createInitialImpacts(initialImpactsCount),
     floods: createInitialImpacts(initialImpactsCount),
     wildfires: createInitialImpacts(initialImpactsCount),
+  },
+  titles: {
+    earthquakes: {},
+    volcanoes: {},
+    floods: {},
+    wildfires: {},
   },
 })

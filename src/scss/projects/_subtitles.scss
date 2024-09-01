@@ -1,0 +1,56 @@
+@use "./../mixin/" as *;
+
+.subtitles {
+  --cell: 45rem;
+  display: grid;
+  grid-template-columns: var(--cell) calc(var(--cell) * 0.6);
+  grid-template-areas: "title date";
+  column-gap: 4rem;
+  color: var(--black-1);
+}
+
+.subtitles__date {
+  grid-area: date;
+  display: grid;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 1.2rem;
+}
+
+.subtitles__title {
+  grid-area: title;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 1.4rem;
+  font-weight: 500;
+}
+
+@include mq(sp) {
+  .subtitles {
+    --cell: auto;
+    display: grid;
+    grid-template-columns: var(--cell);
+    grid-template-areas: "date" "title";
+    row-gap: 0.1rem;
+  }
+
+  .subtitles__date {
+    grid-area: date;
+    display: grid;
+    justify-items: start;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.8rem;
+  }
+
+  .subtitles__title {
+    grid-area: title;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 1.2rem;
+  }
+}

@@ -4,10 +4,10 @@
   font-size: 1.5rem;
   position: fixed;
   z-index: 100;
-  bottom: 2rem;
+  top: 2rem;
   border: 0.1rem solid var(--white-1);
   text-transform: uppercase;
-  padding: 0.8rem 1.6rem 1.1rem;
+  padding: 0.8rem 1.2rem 1rem;
   right: calc(var(--col) * 1);
   color: var(--white-1);
   mix-blend-mode: difference;
@@ -18,10 +18,10 @@
     font-size: 1.3rem;
     position: fixed;
     z-index: 100;
-    bottom: 2rem;
+    top: 2rem;
     border: 0.1rem solid var(--white-1);
     text-transform: uppercase;
-    padding: 0.8rem 1.6rem 1.1rem;
+    padding: 0.4rem 1rem 0.5rem;
     right: calc(var(--col) * 1);
     color: var(--white-1);
     mix-blend-mode: difference;

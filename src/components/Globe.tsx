@@ -7,14 +7,14 @@ import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUti
 import { useSnapshot, subscribe } from 'valtio'
 import { phenomenonState, Impact } from '@/state/phenomenon'
 
-import { useAnimateImpacts } from '@/components/useAnimateImpacts'
+import { useAnimateImpacts } from '@/hooks/useAnimateImpacts'
 
 import globeVertexShader from '@/shaders/globe-vertex.glsl'
 import globeFragmentShader from '@/shaders/globe-fragment.glsl'
 
 import GSAP from 'gsap'
 
-import { createInitialImpacts } from '@/components/functions/createInitialImpacts'
+import { createInitialImpacts } from '@/functions/createInitialImpacts'
 
 const generateGlobePoints = (
   imageData: ImageData,
@@ -144,26 +144,30 @@ export const Globe = () => {
       switch (activePhenomenon) {
         case 'earthquakes':
           materialRef.current.uniforms.phenomenonColor.value.setRGB(
-            0.0,
-            1.0,
-            1.0,
+            56 / 255,
+            67 / 255,
+            74 / 255,
           )
           break
         case 'volcanoes':
           materialRef.current.uniforms.phenomenonColor.value.setRGB(
-            1.0,
-            1.0,
-            0.0,
+            255 / 255,
+            90 / 255,
+            6 / 255,
           )
           break
         case 'floods':
-          materialRef.current.uniforms.phenomenonColor.value.setRGB(0, 0.0, 1.0)
+          materialRef.current.uniforms.phenomenonColor.value.setRGB(
+            31 / 255,
+            44 / 255,
+            255 / 255,
+          )
           break
         case 'wildfires':
           materialRef.current.uniforms.phenomenonColor.value.setRGB(
-            1.0,
-            0.0,
-            0.0,
+            250 / 255,
+            110 / 255,
+            0 / 255,
           )
           break
       }

@@ -1,0 +1,70 @@
+@use "./../mixin/" as *;
+
+.contents {
+  position: fixed;
+  inset: 0;
+  top: 0;
+  left: 0;
+  z-index: 5;
+}
+
+.contents__inner {
+  padding-inline: calc(var(--col) * 2);
+  height: 100svh;
+  padding-bottom: 8rem;
+  display: grid;
+  align-items: end;
+  justify-items: end;
+  justify-content: end;
+  align-content: end;
+  row-gap: 3.2rem;
+}
+
+.contents__header {
+  margin-right: auto;
+}
+
+.contents__body {
+  width: 100%;
+  display: grid;
+  row-gap: 1.2rem;
+  padding-inline: 2.4rem;
+}
+
+@include mq(sp) {
+  .contents {
+    position: fixed;
+    inset: 0;
+    top: 0;
+    left: 0;
+    z-index: 5;
+  }
+
+  .contents__inner {
+    padding-inline: calc(var(--col) * 1);
+    height: 100svh;
+    display: grid;
+    align-items: end;
+    align-content: start;
+    justify-items: stretch;
+    justify-content: stretch;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    row-gap: 1.8rem;
+    padding-bottom: 8rem;
+    padding-top: 50svh;
+  }
+
+  .contents__header {
+    margin-right: auto;
+    display: grid;
+    width: 100%;
+  }
+
+  .contents__body {
+    width: 100%;
+    display: grid;
+    row-gap: 0.8rem;
+    padding-inline: 0rem;
+  }
+}

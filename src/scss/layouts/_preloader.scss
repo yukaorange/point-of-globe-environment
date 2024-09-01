@@ -6,58 +6,46 @@
   inset: 0;
   background-color: var(--white-1);
   overflow: hidden;
-}
-
-.preloader__count {
-  --size: 3.2rem;
-  --font-size: calc(var(--size) * 0.75);
   display: grid;
-  grid-template-columns: repeat(3, auto);
-  justify-content: start;
-  align-content: center;
-}
-
-.preloader__count__digit {
-  width: var(--size);
-  aspect-ratio: 1/1;
-  font-size: var(--font-size);
-  overflow: hidden;
-  position: relative;
-  display: grid;
-  justify-items: center;
-}
-
-.preloader__count__digit--hundred {
-}
-
-.preloader__count__digit--ten {
-}
-
-.preloader__count__digit--one {
-}
-
-.preloader__count__roll {
-  position: absolute;
-  transition-duration: 0.2s;
-  translate: 0 calc(-100% * var(--progress));
-}
-
-.preloader__count__digit--hundred .preloader__count__roll {
-  translate: 0 calc(-10% * var(--progress));
-}
-
-.preloader__count__num {
-  width: var(--size);
-  aspect-ratio: 1/1;
-  line-height: 1;
   place-items: center;
+}
+
+.preloader__inner {
   display: grid;
+  place-items: center;
 }
 
-.preloader__text {
+.preloader__loading {
+  --width: 3rem;
+  --height: 3rem;
+
+  display: grid;
+  place-items: center;
 }
 
-.preloader__assets {
-  opacity: 0;
-  visibility: hidden;
+.preloader__loading-bar {
+  position: absolute;
+
+  border-radius: 50%;
+  background-color: transparent;
+  border: 0.1rem solid var(--black-1);
+}
+
+.preloader__loading-bar:nth-child(1) {
+  width: calc(var(--width) * 0.9);
+  height: calc(var(--height) * 0.9);
+  animation: loading-bar 2s linear infinite;
+  clip-path: polygon(0 0, 100% 0, 100% 50%, 50% 50%, 50% 100%, 0 100%);
+}
+.preloader__loading-bar:nth-child(2) {
+  width: calc(var(--width) * 1.2);
+  height: calc(var(--height) * 1.2);
+  animation: loading-bar 5s linear infinite;
+  clip-path: polygon(0 0, 100% 0, 100% 50%, 50% 50%, 50% 100%, 0 100%);
+}
+.preloader__loading-bar:nth-child(3) {
+  width: calc(var(--width) * 1.5);
+  height: calc(var(--height) * 1.5);
+  animation: loading-bar 10s linear infinite;
+  clip-path: polygon(0 0, 100% 0, 100% 50%, 50% 50%, 50% 100%, 0 100%);
 }

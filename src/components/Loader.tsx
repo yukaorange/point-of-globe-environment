@@ -1,10 +1,15 @@
-import {  useProgress } from '@react-three/drei'
-
 export const Loader = () => {
-  const { active, progress, errors, item, loaded, total } = useProgress()
   return (
     <>
-      <div className="loader">{progress} % </div>
+      <div className="preloader">
+        <div className="preloader__inner">
+          <div className="preloader__loading">
+            <div className="preloader__loading-bar"></div>
+            <div className="preloader__loading-bar"></div>
+            <div className="preloader__loading-bar"></div>
+          </div>
+        </div>
+      </div>
     </>
   )
 }

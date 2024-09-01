@@ -1,0 +1,54 @@
+@use "./../mixin/" as *;
+
+.switcher {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1rem;
+  width: 36rem;
+  font-weight: 500;
+}
+
+.switcher__title {
+  display: grid;
+  justify-items: center;
+  font-size: 3.2rem;
+  text-transform: uppercase;
+  text-shadow: 0.1rem 0.1rem 4rem var(--gray-1);
+  // text-shadow: 0.2rem 0.2rem 0.2rem var(--white-1);
+}
+
+.switcher__button {
+  display: grid;
+  place-items: center;
+}
+
+.switcher__button svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+@include mq(sp) {
+  .switcher {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1rem;
+    width: 28rem;
+    justify-self: center;
+  }
+
+  .switcher__title {
+    display: grid;
+    justify-items: center;
+    font-size: 1.6rem;
+  }
+
+  .switcher__button {
+    display: grid;
+    place-items: center;
+  }
+
+  .switcher__button svg {
+    width: 1rem;
+    height: 1rem;
+  }
+}

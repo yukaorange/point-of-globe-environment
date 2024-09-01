@@ -8,15 +8,21 @@ import { MenuButton } from '@/components/MenuButton'
 import { useControls, Leva } from 'leva'
 import { Suspense, useRef } from 'react'
 
+import { QueryClient, QueryClientProvider } from 'react-query'
+
+const queryClient = new QueryClient()
+
 const App = () => {
   return (
     <>
       <Leva collapsed />
       <MenuButton />
       <Sns />
-      <Suspense fallback={<Loader />}>
-        <Experience />
-      </Suspense>
+      <QueryClientProvider client={queryClient}>
+        <Suspense fallback={<Loader />}>
+          <Experience />
+        </Suspense>
+      </QueryClientProvider>
     </>
   )
 }

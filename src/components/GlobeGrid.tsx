@@ -1,12 +1,12 @@
-import { Line, Points, Point, PointMaterial } from '@react-three/drei'
+import React, { useMemo, useRef, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { useMemo, useRef } from 'react'
+import { Line, Points, Point, PointMaterial } from '@react-three/drei'
 import * as THREE from 'three'
+import GSAP from 'gsap'
 
 interface GlobeGrid {
   radius?: number
   pointCount?: number
-  nodeCount?: number
   orbitCount?: number
   pointColor?: THREE.Color
   pointOpacity?: number
@@ -16,174 +16,228 @@ interface GlobeGrid {
   orbitOpacity?: number
   size?: number
   lineWidth?: number
+  speed?: number
 }
 
-export const GlobeGrid = ({
-  radius = 5.5,
-  pointCount = 64,
-  nodeCount = 64,
+export const GlobeGrid: React.FC<GlobeGrid> = ({
+  radius = 5,
+  pointCount = 50,
   orbitCount = 3,
-  nodeColor = new THREE.Color(0.3, 0.3, 0.3),
-  nodeOpacity = 0.8,
   pointColor = new THREE.Color(0.3, 0.3, 0.3),
   pointOpacity = 0.8,
-  orbitColor = new THREE.Color(0, 0, 1),
+  nodeColor = new THREE.Color(0.1, 0.1, 0.1),
+  nodeOpacity = 0.8,
+  orbitColor = new THREE.Color(0.25, 0.25, 0.25),
   orbitOpacity = 1,
   size = 0.25,
   lineWidth = 0.25,
-}: GlobeGrid) => {
-  const orbitRefs = useRef<THREE.Line[]>([])
+  speed = 0.004,
+}) => {
+  const UPDATE_INTERVAL = 5
 
-  const { points, connections, nodes, orbits } = useMemo(() => {
-    const connections: THREE.Vector3[][] = []
-    const points: THREE.Vector3[] = []
-    const nodes: THREE.Vector3[] = []
-    const orbits: THREE.Vector3[][] = []
+  const pointsRef = useRef<THREE.Points>(null)
+  const orbitRefs = useRef<THREE.Group[]>([])
+  const [frame, setFrame] = useState(0)
+  const [connections, setConnections] = useState<
+    [THREE.Vector3, THREE.Vector3][]
+  >([])
+
+  const { initialPositions, pointVelocities, orbits } = useMemo(() => {
+    const initialPositions: THREE.Vector3[] = []
+    const pointVelocities: THREE.Vector3[] = []
+
+    const orbitRadius = radius + 3
     for (let i = 0; i < pointCount; i++) {
       const phi = Math.random() * Math.PI * 2
       const theta = Math.random() * Math.PI * 2
 
-      points.push(
-        new THREE.Vector3(
-          radius * Math.sin(phi) * Math.cos(theta),
-          radius * Math.sin(phi) * Math.sin(theta),
-          radius * Math.cos(phi),
-        ),
+      const position = new THREE.Vector3(
+        orbitRadius * Math.cos(phi) * Math.sin(theta),
+        orbitRadius * Math.sin(phi) * Math.cos(theta),
+        orbitRadius * Math.cos(phi),
       )
-    }
 
-    for (let i = 0; i < nodeCount; i++) {
-      const phi = 2 * Math.acos(-1 + Math.random() * 2) //方位角 0 ～ 2π
-      const theta = Math.random() * Math.PI //仰角 0 ～ π
-      nodes.push(
-        new THREE.Vector3(
-          radius * Math.sin(phi) * Math.cos(theta),
-          radius * Math.sin(phi) * Math.sin(theta),
-          radius * Math.cos(phi),
-        ),
+      initialPositions.push(position)
+
+      //この段階でのvelocity => 接線方向の単位ベクトル
+      const velocity = new THREE.Vector3().crossVectors(
+        position,
+        new THREE.Vector3(0, 1, 0).normalize(),
       )
+
+      //速度を定義
+      velocity.multiplyScalar(speed + Math.random() * speed)
+
+      pointVelocities.push(velocity)
     }
 
-    const maxConnectionDistance = radius * 0.5
-
-    for (let i = 0; i < points.length; i++) {
-      const nearPoints = points.filter((point, index) => {
-        if (index === i) return false
-
-        const distance = points[i].distanceTo(point)
-        const angle = points[i].angleTo(point)
-
-        return distance < maxConnectionDistance && angle < Math.PI / 3
-      })
-
-      //point can only connect to 3 other points
-      nearPoints.slice(0, 3).forEach((point) => {
-        connections.push([points[i], point])
-      })
-    }
-
+    const orbits: THREE.Vector3[][] = []
     for (let i = 0; i < orbitCount; i++) {
-      const orbitRadius = radius + 0.5 + Math.random() * 0.5
+      const orbitRadius = radius + 7
       const segments = 64
       const orbitPoints: THREE.Vector3[] = []
 
       for (let j = 0; j <= segments; j++) {
         const theta = (j / segments) * Math.PI * 2
-
         const point = new THREE.Vector3(
           orbitRadius * Math.cos(theta),
           0,
           orbitRadius * Math.sin(theta),
         )
-
         orbitPoints.push(point)
       }
 
       orbits.push(orbitPoints)
     }
-    return { points, connections, nodes, orbits }
-  }, [pointCount, nodeCount, orbitCount, radius])
+
+    return { initialPositions, pointVelocities, orbits }
+  }, [pointCount, orbitCount, radius])
+
+  const updateConnections = (positions: THREE.Vector3[]) => {
+    const maxConnectionDistance = radius * 0.6
+    const newConnections: [THREE.Vector3, THREE.Vector3][] = []
+
+    for (let i = 0; i < positions.length; i++) {
+      const point = positions[i]
+      const potentialConnections: [THREE.Vector3, number][] = []
+
+      for (let j = i + 1; j < positions.length; j++) {
+        const otherPoint = positions[j]
+        const distance = point.distanceTo(otherPoint)
+        const angle = point.angleTo(otherPoint)
+
+        if (distance < maxConnectionDistance && angle < Math.PI / 3) {
+          potentialConnections.push([otherPoint, distance])
+        }
+      }
+
+      potentialConnections.sort((a, b) => a[1] - b[1])
+
+      potentialConnections.slice(0, 3).forEach(([otherPoint]) => {
+        newConnections.push([point, otherPoint])
+      })
+    }
+
+    return newConnections
+  }
+
+  useEffect(() => {
+    if (pointsRef.current) {
+      const initialConnections = updateConnections(initialPositions)
+      setConnections(initialConnections)
+    }
+  }, [])
 
   useFrame((state) => {
     const { clock } = state
+    const time = clock.getElapsedTime()
 
-    orbits.forEach((orbit, index) => {
-      const orbitLine = orbitRefs.current[index]
-      if (!orbitLine) return
+    if (pointsRef.current) {
+      pointsRef.current.children.forEach((child, i) => {
+        const point = child as THREE.Mesh
 
-      // if (index === 0) {
-      //   console.log('Before update:', orbit[0])
-      // }
+        const velocity = pointVelocities[i]
 
-      const time = clock.getElapsedTime()
+        const normalizedPosition = point.position.clone().normalize()
+        const radialComponent = normalizedPosition.multiplyScalar(
+          velocity.dot(normalizedPosition),
+        )
 
-      const position =
-        Math.sin(time * 0.5 + (index * Math.PI) / orbitCount) * 0.5
-      const scale = Math.cos(Math.asin(position))
+        velocity.sub(radialComponent)
 
-      orbit.forEach((point, pointIndex) => {
-        const theta = (pointIndex / orbit.length) * Math.PI * 2
-        point.x = Math.cos(theta) * scale * radius
-        point.y = position * radius
-        point.z = Math.sin(theta) * scale * radius
+        point.position.add(velocity)
+
+        if (Math.random() < 0.01) {
+          const randomVelocity = new THREE.Vector3(
+            (Math.random() - 0.5) * 0.02,
+            (Math.random() - 0.5) * 0.02,
+            (Math.random() - 0.5) * 0.02,
+          )
+
+          velocity.add(randomVelocity)
+        }
+
+        velocity
+          .crossVectors(point.position, velocity.cross(point.position))
+          .normalize()
+
+        velocity.multiplyScalar(speed + Math.random() * speed)
       })
 
-      // if (index === 0) {
-      //   console.log('After update, before setFromPoints:', orbit[0])
-      // }
+      setFrame((prevFrame) => {
+        const newFrame = prevFrame + 1
+        if (newFrame % UPDATE_INTERVAL === 0) {
+          const newPositions = pointsRef.current!.children.map(
+            (child) => (child as THREE.Mesh).position,
+          )
+          const newConnections = updateConnections(newPositions)
+          setConnections(newConnections)
+        }
+        return newFrame
+      })
+    }
 
-      orbitLine.geometry.setFromPoints(orbit)
+    orbits.forEach((orbit, index) => {
+      const orbitGroup = orbitRefs.current[index]
+      if (!orbitGroup) return
 
-      // if (index === 0) {
-      //   console.log(
-      //     'After setFromPoints:',
-      //     orbitLine.geometry.attributes.position,
-      //   )
-      // }
+      let position = time * speed * 10.0 + index * 0.25
+      position = GSAP.utils.mapRange(0, 1, -1.0, 1.0, position % 1)
 
-      orbitLine.geometry.computeBoundingSphere()
+      const scale = Math.cos(Math.asin(position))
+
+      orbitGroup.scale.set(scale, 1, scale)
+      orbitGroup.position.y = position * (radius + 2.5)
     })
   })
 
   return (
     <group>
-      <Points>
-        <PointMaterial
-          transparent={true}
-          color={pointColor}
-          size={size}
-          opacity={pointOpacity}
-        />
-        {points.map((point, index) => {
-          return <Point key={index} position={point} />
-        })}
-      </Points>
+      <group>
+        <Points ref={pointsRef}>
+          {initialPositions.map((point, index) => (
+            <React.Fragment key={index}>
+              <Point position={point} color={pointColor} />
+              <PointMaterial
+                transparent={true}
+                vertexColors={true}
+                size={size}
+                sizeAttenuation={true}
+                opacity={pointOpacity}
+              />
+            </React.Fragment>
+          ))}
+        </Points>
+      </group>
 
-      {connections.map((connection, index) => {
-        return (
-          <Line
-            key={index}
-            points={connection}
-            color={nodeColor}
-            lineWidth={lineWidth}
-            opacity={nodeOpacity}
-          />
-        )
-      })}
-
-      {orbits.map((orbit, index) => (
+      {connections.map((connection, index) => (
         <Line
           key={index}
-          points={orbit}
-          color={orbitColor}
+          points={connection}
+          color={nodeColor}
           lineWidth={lineWidth}
-          opacity={orbitOpacity}
+          transparent={true}
+          opacity={nodeOpacity}
+        />
+      ))}
+
+      {orbits.map((orbit, index) => (
+        <group
+          key={index}
           ref={(el) => {
             if (el) {
-              orbitRefs.current[index] = el as unknown as THREE.Line
+              orbitRefs.current[index] = el
             }
           }}
-        />
+        >
+          <Line
+            points={orbit}
+            color={orbitColor}
+            lineWidth={lineWidth}
+            transparent={true}
+            opacity={orbitOpacity}
+          />
+        </group>
       ))}
     </group>
   )

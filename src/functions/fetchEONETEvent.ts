@@ -1,3 +1,5 @@
+import { EventCategory } from '@/state/phenomenon'
+
 const EONET_API_BASE_URL = 'https://eonet.gsfc.nasa.gov/api/v3/events'
 const EONET_API_BASE_CATEGRY = 'https://eonet.gsfc.nasa.gov/api/v3/categories'
 
@@ -10,10 +12,10 @@ export interface EONETEvent {
       type: string
       coordinates: number[]
     }[]
+    description: string
+    closed: string
   }[]
 }
-
-export type EventCategory = 'earthquakes' | 'volcanoes' | 'floods' | 'wildfires'
 
 const fetchEONETEvent = async (category: EventCategory) => {
   try {

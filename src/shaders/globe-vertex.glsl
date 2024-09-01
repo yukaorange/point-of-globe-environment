@@ -24,9 +24,9 @@ void main() {
   for(int i = 0; i < 10; i++) {
     float dist = distance(center, impacts[i].impactPosition);
 
-    float curRadius = impacts[i].impactMaxRadius * impacts[i].impactRatio;
+    float currentRadius = impacts[i].impactMaxRadius * impacts[i].impactRatio;
 
-    float stepValue = smoothstep(0., curRadius, dist) - smoothstep(curRadius - (0.25 * impacts[i].impactRatio), curRadius, dist);
+    float stepValue = smoothstep(0., currentRadius, dist) - smoothstep(currentRadius - (0.25 * impacts[i].impactRatio), currentRadius, dist);
 
     stepValue *= 1.0 - impacts[i].impactRatio;
 
@@ -41,7 +41,7 @@ void main() {
 
   transformedPosition = (transformedPosition - center) * mix(1.0, scale * 1.25, finalStep) + center;
 
-  transformedPosition += normal * finalStep * 0.2;
+  transformedPosition -= normal * finalStep * 0.5;
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(transformedPosition, 1.0);
 }
