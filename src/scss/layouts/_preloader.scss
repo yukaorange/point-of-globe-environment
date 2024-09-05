@@ -20,12 +20,14 @@
   --height: 3rem;
 
   display: grid;
-  place-items: center;
+  position: relative;
 }
 
 .preloader__loading-bar {
   position: absolute;
-
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
   border-radius: 50%;
   background-color: transparent;
   border: 0.1rem solid var(--black-1);

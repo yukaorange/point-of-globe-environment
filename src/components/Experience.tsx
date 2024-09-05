@@ -28,6 +28,8 @@ export const Experience = (): JSX.Element => {
   //   EONETEvent
   // > | null>(null)
 
+  const globeLayerRef = useRef<HTMLDivElement>(null)
+
   const { activePhenomenon } = useSnapshot(phenomenonState)
 
   const categories: EventCategory[] = [
@@ -94,6 +96,12 @@ export const Experience = (): JSX.Element => {
       const eventObjects = getEONETEventObjects(EONETEvents)
       phenomenonState.titles = eventObjects
     }
+    if (
+      EONETEvents &&
+      !globeLayerRef.current?.classList.contains('is-loaded')
+    ) {
+      globeLayerRef.current?.classList.add('is-loaded')
+    }
   }, [EONETEvents])
 
   useEffect(() => {
@@ -108,24 +116,26 @@ export const Experience = (): JSX.Element => {
 
   return (
     <>
-      <Canvas>
-        {/* <Perf position="top-left" /> */}
-        <color attach="background" args={[204 / 255, 205 / 255, 207 / 255]} />
-        <ResponsiveCamera />
-        <OrbitControls />
-        <Globe />
-        <GlobeGrid />
-      </Canvas>
-      <div className="contents">
-        <div className="contents__inner">
-          <div className="contents__header">
-            <Switcher
-              switchFunction={switchPhenomenon}
-              categories={categories}
-            />
-          </div>
-          <div className="contents__body">
-            <Subtitles />
+      <div className="globe-layer" ref={globeLayerRef}>
+        <Canvas>
+          {/* <Perf position="top-left" /> */}
+          <color attach="background" args={[204 / 255, 205 / 255, 207 / 255]} />
+          <ResponsiveCamera />
+          <OrbitControls />
+          <Globe />
+          <GlobeGrid />
+        </Canvas>
+        <div className="contents">
+          <div className="contents__inner">
+            <div className="contents__header">
+              <Switcher
+                switchFunction={switchPhenomenon}
+                categories={categories}
+              />
+            </div>
+            <div className="contents__body">
+              <Subtitles />
+            </div>
           </div>
         </div>
       </div>
